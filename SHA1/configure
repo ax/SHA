@@ -1,0 +1,5 @@
+#!/bin/bash
+
+if [ ! -d /tmp/SHA1 ]; then
+	mkdir -p /tmp/SHA1
+fi
