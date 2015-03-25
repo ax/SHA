@@ -7,13 +7,10 @@ COMP = $(CC) $(OPT)
 DIR = /tmp/SHA1/
 HERE = ./
 
-# dynamics linking options
-DLO = -lm -lssl -lcrypto -lpthread -pthread
-
 OBJS = sha1.o 
 
 sha1_test: $(HERE)sha1test.c $(OBJS)
-	$(COMP)	-o $@ $(HERE)sha1test.c $(DIR)sha1.o $(DLO)
+	$(COMP)	-o $@ $(HERE)sha1test.c $(DIR)sha1.o
 
 sha1.o: $(HERE)sha1.c
 	$(COMP) -o $(DIR)$@ -c $(HERE)sha1.c 
