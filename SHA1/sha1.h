@@ -1,73 +1,138 @@
+/**************************** sha.h ****************************/
 /*
-*  sha1.h
-*
-*  Description:
-*      This is the header file for code which implements the Secure
-*      Hashing Algorithm 1 as defined in FIPS PUB 180-1 published
-*      April 17, 1995.
-*
-*      Many of the variable names in this code, especially the
-*      single character names, were used because those were the names
-*      used in the publication.
-*
-*      Please read the file sha1.c for more information.
-*
-*/
+ *	This code is based on RFC 6234
+ * */
+/***************** See RFC 6234 for details. *******************/
+/*
+   Copyright (c) 2011 IETF Trust and the persons identified as
+   authors of the code.  All rights reserved.
 
-#ifndef _SHA1_H_
-#define _SHA1_H_
+   Redistribution and use in source and binary forms, with or
+   without modification, are permitted provided that the following
+   conditions are met:
+
+   - Redistributions of source code must retain the above
+     copyright notice, this list of conditions and
+     the following disclaimer.
+
+   - Redistributions in binary form must reproduce the above
+     copyright notice, this list of conditions and the following
+     disclaimer in the documentation and/or other materials provided
+     with the distribution.
+
+   - Neither the name of Internet Society, IETF or IETF Trust, nor
+     the names of specific contributors, may be used to endorse or
+     promote products derived from this software without specific
+     prior written permission.
+
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+   CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+   INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+   MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+   DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+   CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+   NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+   OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+   EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+#ifndef _SHA_H_
+#define _SHA_H_
+
+/*
+ *  Description:
+ *      This file implements the Secure Hash Algorithms
+ *      as defined in the U.S. National Institute of Standards
+ *      and Technology Federal Information Processing Standards
+ *      Publication (FIPS PUB) 180-3 published in October 2008
+ *      and formerly defined in its predecessors, FIPS PUB 180-1
+ *      and FIP PUB 180-2.
+ *
+ *      A combined document showing all algorithms is available at
+ *              http://csrc.nist.gov/publications/fips/
+ *                     fips180-3/fips180-3_final.pdf
+ *
+ *      The SHA-1 hash is defined in this size:
+ *              SHA-1           20 byte / 160 bit
+ *
+ *  Compilation Note:
+ *    These files may be compiled with two options:
+ *        USE_32BIT_ONLY - use 32-bit arithmetic only, for systems
+ *                         without 64-bit integers
+ *
+ *        USE_MODIFIED_MACROS - use alternate form of the SHA_Ch()
+ *                         and SHA_Maj() macros that are equivalent
+ *                         and potentially faster on many systems
+ *
+ */
 
 #include <stdint.h>
 /*
  * If you do not have the ISO standard stdint.h header file, then you
- * must typdef the following:
+ * must typedef the following:
  *    name              meaning
- *  uint32_t         unsigned 32 bit integer
- *  uint8_t          unsigned 8 bit integer (i.e., unsigned char)
+ *  uint64_t         unsigned 64-bit integer
+ *  uint32_t         unsigned 32-bit integer
+ *  uint8_t          unsigned 8-bit integer (i.e., unsigned char)
  *  int_least16_t    integer of >= 16 bits
  *
+ * See stdint-example.h
  */
 
 #ifndef _SHA_enum_
 #define _SHA_enum_
-enum
-{
+/*
+ *  All SHA functions return one of these values.
+ */
+enum {
     shaSuccess = 0,
     shaNull,            /* Null pointer parameter */
     shaInputTooLong,    /* input data too long */
-    shaStateError       /* called Input after Result */
+    shaStateError,      /* called Input after FinalBits or Result */
+    shaBadParam         /* passed a bad parameter */
 };
-#endif
-#define SHA1HashSize 20
+#endif /* _SHA_enum_ */
+
+/*
+ *  These constants hold size information for each of the SHA
+ *  hashing operations
+ */
+enum {
+    SHA1_Message_Block_Size = 64, SHA1HashSize = 20,
+    SHA1HashSizeBits = 160
+};
 
 /*
  *  This structure will hold context information for the SHA-1
- *  hashing operation
+ *  hashing operation.
  */
-typedef struct SHA1Context
-{
-    uint32_t Intermediate_Hash[SHA1HashSize/4]; /* Message Digest  */
+typedef struct SHA1Context {
+    uint32_t Intermediate_Hash[SHA1HashSize/4]; /* Message Digest */
 
-    uint32_t Length_Low;            /* Message length in bits      */
-    uint32_t Length_High;           /* Message length in bits      */
+    uint32_t Length_High;               /* Message length in bits */
+    uint32_t Length_Low;                /* Message length in bits */
 
-                               /* Index into message block array   */
-    int_least16_t Message_Block_Index;
-    uint8_t Message_Block[64];      /* 512-bit message blocks      */
+    int_least16_t Message_Block_Index;  /* Message_Block array index */
+                                        /* 512-bit message blocks */
+    uint8_t Message_Block[SHA1_Message_Block_Size];
 
-    int Computed;               /* Is the digest computed?         */
-    int Corrupted;             /* Is the message digest corrupted? */
+    int Computed;                   /* Is the hash computed? */
+    int Corrupted;                  /* Cumulative corruption code */
 } SHA1Context;
 
 /*
  *  Function Prototypes
  */
 
-int SHA1Reset(  SHA1Context *);
-int SHA1Input(  SHA1Context *,
-                const uint8_t *,
-                unsigned int);
-int SHA1Result( SHA1Context *,
-                uint8_t Message_Digest[SHA1HashSize]);
-
+/* SHA-1 */
+extern int SHA1Reset(SHA1Context *);
+extern int SHA1Input(SHA1Context *, const uint8_t *bytes,
+                     unsigned int bytecount);
+extern int SHA1FinalBits(SHA1Context *, uint8_t bits,
+                         unsigned int bit_count);
+extern int SHA1Result(SHA1Context *,
+                      uint8_t Message_Digest[SHA1HashSize]);
 #endif
